@@ -1,0 +1,28 @@
+{
+  "name": "nodejs-auth-api",
+  "version": "1.0.0",
+  "description": "Production-ready, secure authentication engine built with Node.js, Express, and MongoDB. Features short-lived JWT access tokens, secure HttpOnly refresh token rotation, and automated SMTP email verification using clean architecture",
+  "license": "ISC",
+  "author": "napoleon_backend",
+  "type": "module",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node app.js",
+    "dev": "nodemon app.js"
+  },
+  "dependencies": {
+    "bcrypt": "^6.0.0",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.6",
+    "dotenv": "^16.6.1",
+    "express": "^5.2.1",
+    "express-validator": "^7.3.2",
+    "jsonwebtoken": "^9.0.3",
+    "mongoose": "^9.7.0",
+    "nodemailer": "^9.0.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.14"
+  }
+}
