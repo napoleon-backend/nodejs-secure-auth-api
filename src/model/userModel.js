@@ -41,7 +41,10 @@ const userSchema = new mongoose.Schema(
     emailVerificationExpires: Date,
     passwordResetToken: String,
     passwordResetExpires: Date,
-    refreshToken: String,
+    refreshToken: {
+      type: String,
+      select: false,
+    },
   },
   {
     // Automatically creates 'createdAt' and 'updatedAt' fields

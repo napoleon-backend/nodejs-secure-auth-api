@@ -1,6 +1,7 @@
 import * as userService from '../services/userService.js';
 import catchAsync from '../utils/catchAsync.js';
 import sendEmail from '../utils/email.js';
+import { createSendToken } from './authController.js';
 
 /**
  * HTTP Handler for creating a user.
@@ -27,25 +28,7 @@ export const createUserHandler = catchAsync(async (req, res, next) => {
     req.body.password,
   );
 
-  const cookieOptions = {
-    expires: new Date(
-      Date.now() +
-        (parseInt(process.env.JWT_COOKIE_EXPIRES_IN) || 90) *
-          24 *
-          60 *
-          60 *
-          1000,
-    ),
-    httpOnly: true,
-    secure: req.secure || req.headers['x-forwarded-proto'] === 'https',
-  };
-  res.cookie('jwt', token, cookieOptions);
-
-  res.status(201).json({
-    success: true,
-    token,
-    data: loggedInUser,
-  });
+  createSendToken(user, 201, res);
 });
 
 /**
