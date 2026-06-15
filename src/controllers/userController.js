@@ -36,29 +36,9 @@ export const createUserHandler = catchAsync(async (req, res, next) => {
  */
 export const loginHandler = catchAsync(async (req, res) => {
   const { email, password } = req.body;
-  const { token, user } = await userService.authenticateUser(email, password);
+  const { user } = await userService.authenticateUser(email, password);
 
-  // Set JWT in HttpOnly cookie
-  const cookieOptions = {
-    expires: new Date(
-      Date.now() +
-        (parseInt(process.env.JWT_COOKIE_EXPIRES_IN) || 90) *
-          24 *
-          60 *
-          60 *
-          1000,
-    ),
-    httpOnly: true,
-    secure: req.secure || req.headers['x-forwarded-proto'] === 'https',
-  };
-
-  res.cookie('jwt', token, cookieOptions);
-
-  res.status(200).json({
-    success: true,
-    token,
-    data: user,
-  });
+  createSendToken(user, 200, res);
 });
 /**
  * HTTP Handler for forgot password.
@@ -88,31 +68,12 @@ export const forgotPasswordHandler = catchAsync(async (req, res) => {
  * HTTP Handler for resetting password.
  */
 export const resetPasswordHandler = catchAsync(async (req, res) => {
-  const { user, token } = await userService.resetPassword(
+  const { user } = await userService.resetPassword(
     req.params.token,
     req.body.password,
   );
 
-  // Set JWT in HttpOnly cookie so the user is logged in automatically
-  const cookieOptions = {
-    expires: new Date(
-      Date.now() +
-        (parseInt(process.env.JWT_COOKIE_EXPIRES_IN) || 90) *
-          24 *
-          60 *
-          60 *
-          1000,
-    ),
-    httpOnly: true,
-    secure: req.secure || req.headers['x-forwarded-proto'] === 'https',
-  };
-  res.cookie('jwt', token, cookieOptions);
-
-  res.status(200).json({
-    success: true,
-    token,
-    data: user,
-  });
+  createSendToken(user, 200, res);
 });
 
 /**

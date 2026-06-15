@@ -84,6 +84,8 @@ export const resetPassword = async (token, password) => {
   user.isVerified = true; // Auto-verify on password reset
   user.passwordResetExpires = undefined;
   await user.save();
+
+  return { user };
 };
 
 /**
