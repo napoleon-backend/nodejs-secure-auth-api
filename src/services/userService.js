@@ -1,6 +1,7 @@
-import jwt from 'jsonwebtoken';
-import crypto from 'crypto';
-import User from '../model/userModel.js';
+import jwt from "jsonwebtoken";
+import crypto from "crypto";
+import User from "../model/userModel.js";
+import sendEmail from "../utils/email.js";
 
 /**
  * Creates a new user in the database.
@@ -8,12 +9,47 @@ import User from '../model/userModel.js';
  * @returns {Promise<Object>} The created user document.
  * @throws {Error} If the email is already registered.
  */
-export const createUser = async (userData) => {
+export const createUser = async (userData, protocol, host) => {
+  // 1. Check if user already exists
   const existingUser = await User.findOne({ email: userData.email });
   if (existingUser) {
-    throw new Error('Email already registered');
+    throw new Error("Email already registered");
   }
-  return await User.create(userData);
+
+  // 2. Create the user instance in memory first (or via your schema constructor)
+  // This allows us to generate the token BEFORE saving to the DB a single time.
+  const user = new User({
+    name: userData.name,
+    email: userData.email,
+    password: userData.password,
+    // ... any other fields
+  });
+
+  // 3. Generate verification token (mutates the user object in memory)
+  const verificationToken = user.createEmailVerificationToken();
+
+  // 4. Save to the database ONCE
+  await user.save();
+
+  // 5. Construct verification URL
+  const verifyUrl = `${protocol}://${host}/api/v1/users/verify-email/${verificationToken}`;
+  const message = `Welcome to Napoleon! Please verify your account by clicking the link below:\n\n${verifyUrl}\n\nThis link is valid for 24 hours.`;
+
+  sendEmail({
+    email: user.email,
+    subject: "Email Verification (Valid for 24h)",
+    message,
+  }).catch((err) => {
+    console.error("Email failed to send in background:", err);
+  });
+
+  // 6. Log the user in immediately (Using the user we already have)
+  const { token, user: loggedInUser } = await authenticateUser(
+    user.email,
+    userData.password,
+  );
+
+  return { token, user: loggedInUser };
 };
 
 /**
@@ -24,17 +60,17 @@ export const createUser = async (userData) => {
  */
 export const authenticateUser = async (email, password) => {
   // 1) Check if user exists & password is correct
-  const user = await User.findOne({ email }).select('+password');
+  const user = await User.findOne({ email }).select("+password");
 
   if (!user || !(await user.comparePassword(password))) {
-    const error = new Error('Incorrect email or password');
+    const error = new Error("Incorrect email or password");
     error.statusCode = 401;
     throw error;
   }
 
   // 2) Generate Token
   const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
-    expiresIn: process.env.JWT_EXPIRES_IN || '90d',
+    expiresIn: process.env.JWT_EXPIRES_IN || "90d",
   });
 
   user.password = undefined; // Remove password from output
@@ -50,7 +86,7 @@ export const authenticateUser = async (email, password) => {
 export const forgotPassword = async (email) => {
   const user = await User.findOne({ email });
   if (!user) {
-    throw new Error('There is no user with that email address.');
+    throw new Error("There is no user with that email address.");
   }
 
   const resetToken = user.createPasswordResetToken();
@@ -66,7 +102,7 @@ export const forgotPassword = async (email) => {
  */
 export const resetPassword = async (token, password) => {
   // 1) Hash the token to compare with DB
-  const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+  const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
 
   // 2) Find user with valid token and not expired
   const user = await User.findOne({
@@ -75,7 +111,7 @@ export const resetPassword = async (token, password) => {
   });
 
   if (!user) {
-    throw new Error('Token is invalid or has expired.');
+    throw new Error("Token is invalid or has expired.");
   }
 
   // 3) Update password and clear reset fields
@@ -105,7 +141,7 @@ export const getAllUsers = async () => {
 export const getUserById = async (id) => {
   const user = await User.findById(id);
   if (!user) {
-    throw new Error('User not found');
+    throw new Error("User not found");
   }
   return user;
 };
@@ -121,7 +157,7 @@ export const getUserById = async (id) => {
 export const updateUser = async (id, updateData) => {
   const user = await User.findById(id);
   if (!user) {
-    throw new Error('User not found');
+    throw new Error("User not found");
   }
 
   // Explicitly assign keys to the document instance
@@ -143,7 +179,7 @@ export const updateUser = async (id, updateData) => {
 export const deleteUser = async (id) => {
   const user = await User.findByIdAndDelete(id);
   if (!user) {
-    throw new Error('User not found');
+    throw new Error("User not found");
   }
   return user;
 };

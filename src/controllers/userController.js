@@ -1,31 +1,16 @@
-import * as userService from '../services/userService.js';
-import catchAsync from '../utils/catchAsync.js';
-import sendEmail from '../utils/email.js';
-import { createSendToken } from './authController.js';
+import * as userService from "../services/userService.js";
+import catchAsync from "../utils/catchAsync.js";
+import sendEmail from "../utils/email.js";
+import { createSendToken } from "./authController.js";
 
 /**
  * HTTP Handler for creating a user.
  */
 export const createUserHandler = catchAsync(async (req, res, next) => {
-  const user = await userService.createUser(req.body);
-
-  // After user creation, generate verification token and send email
-  const verificationToken = user.createEmailVerificationToken();
-  await user.save({ validateBeforeSave: false }); // Save token fields without re-validating password
-
-  const verifyUrl = `${req.protocol}://${req.get('host')}/api/v1/users/verify-email/${verificationToken}`;
-  const message = `Welcome to Napoleon! Please verify your account by clicking the link below:\n\n${verifyUrl}\n\nThis link is valid for 24 hours.`;
-
-  await sendEmail({
-    email: user.email,
-    subject: 'Email Verification (Valid for 24h)',
-    message,
-  });
-
-  // Log the user in immediately after creation
-  const { token, user: loggedInUser } = await userService.authenticateUser(
-    user.email,
-    req.body.password,
+  const { token, user } = await userService.createUser(
+    req.body,
+    req.protocol,
+    req.get("host"),
   );
 
   createSendToken(user, 201, res);
@@ -48,19 +33,19 @@ export const forgotPasswordHandler = catchAsync(async (req, res) => {
   const resetToken = await userService.forgotPassword(req.body.email); // This service call also saves the hashed token to the user model
 
   // 2) Construct reset URL
-  const resetUrl = `${req.protocol}://${req.get('host')}/api/v1/users/resetPassword/${resetToken}`;
+  const resetUrl = `${req.protocol}://${req.get("host")}/api/v1/users/resetPassword/${resetToken}`;
   const message = `You have requested a password reset. Please use the following link to reset your password:\n\n${resetUrl}\n\nThis link is valid for 10 minutes.`;
 
   // 3) Send the email
   await sendEmail({
     email: req.body.email, // Assuming userService.forgotPassword found the user by this email
-    subject: 'Your Password Reset Token (Valid for 10min)',
+    subject: "Your Password Reset Token (Valid for 10min)",
     message,
   });
 
   res.status(200).json({
     success: true,
-    message: 'Password reset link sent to your email!',
+    message: "Password reset link sent to your email!",
   });
 });
 
@@ -127,6 +112,6 @@ export const deleteUserHandler = catchAsync(async (req, res) => {
   await userService.deleteUser(req.params.id);
   res.status(200).json({
     success: true,
-    message: 'User deleted successfully',
+    message: "User deleted successfully",
   });
 });

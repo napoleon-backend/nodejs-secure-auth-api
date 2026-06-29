@@ -49,6 +49,27 @@ src/
 - `POST /api/v1/users/forgotPassword` - **Recovery**: Issues a 10-minute recovery token via SMTP.
 - `PATCH /api/v1/users/resetPassword/:token` - **Reset**: Validates parameters and updates credentials.
 
+### Respond structure
+
+```
+{
+"success": true,
+"token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjZhM2QzMDY0YTk5NWI3NThmZGRmZWE3ZiIsImlhdCI6MTc4MjM5NDk5MCwiZXhwIjoxNzgyMzk0OTkwfQ.F_C_Mz9ce_zjyOkfyEJ4qIe-Fa_4nmXdt3PVx62x8oA",
+    "data": {
+    "name": "Test User",
+    "email": "test@napoleon-backend.com",
+    "role": "user",
+    "isVerified": false,
+    "\_id": "6a3d3064a995b758fddfea7f",
+    "createdAt": "2026-06-25T13:43:01.006Z",
+    "updatedAt": "2026-06-25T13:43:01.152Z",
+    "\_\_v": 0,
+    "emailVerificationToken": "23bd9dea7ebcb66c73f1a0f9b01f9320e7075c0bfca57817804c0f0a4f0080aa",
+    "emailVerificationExpires": "2026-06-26T13:43:01.151Z"
+    }
+}
+```
+
 ### 🔐 Protected Operations (Requires Auth Token)
 
 - `GET    /api/v1/users/me` - Resolves the current authenticated profile.
